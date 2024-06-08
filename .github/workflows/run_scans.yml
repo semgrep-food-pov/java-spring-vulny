@@ -50,4 +50,4 @@ jobs:
           echo $details
 
       - name: Output details
-        run: echo "Details: ${{ steps.read-details.outputs.details }}"
+        run: echo "${{ steps.read-details.outputs.details }}"
