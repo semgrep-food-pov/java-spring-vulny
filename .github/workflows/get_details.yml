@@ -1,0 +1,23 @@
+name: Get Details
+
+on:
+  repository_dispatch:
+    types: [get-details]
+
+jobs:
+  get-details-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Generate details
+        id: generate
+        run: |
+          echo "details=Important information" >> $GITHUB_ENV
+
+      - name: Save details to artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: details
+          path: $GITHUB_ENV
