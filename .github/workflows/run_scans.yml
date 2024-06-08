@@ -1,0 +1,53 @@
+name: Run Scan
+
+on:
+  workflow_dispatch: {}
+  pull_request: {}
+
+jobs:
+  dispatch-details-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository dispatch to get details
+        run: |
+          curl -X POST -H "Accept: application/vnd.github.everest-preview+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/dispatches \
+          -d '{"event_type":"get-details"}'
+
+  wait-for-details:
+    needs: dispatch-details-job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for get-details workflow to complete
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            const { data: runs } = await github.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              per_page: 1,
+              event: 'repository_dispatch',
+              status: 'completed'
+            });
+            const runId = runs.workflow_runs[0].id;
+            return runId;
+        id: get-run-id
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download details artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: details
+          path: ./details
+
+      - name: Read and print details
+        id: read-details
+        run: |
+          details=$(cat ./details/.github_env)
+          echo $details
+
+      - name: Output details
+        run: echo "Details: ${{ steps.read-details.outputs.details }}"
